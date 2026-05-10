@@ -1,0 +1,131 @@
+/*=============================================
+              IPOS Source File
+===============================================*/
+#include <const.h>
+#include <io.h>
+
+#define posicao_minima 0
+#define posicao_media 30427
+#define posicao_maxima 79793
+
+/*
+   DI01 - chamada para posição mínima
+   DI02 - chamada para posição intermédia
+   DI03 - chamada para posição máxima
+   DI04 - modo automático
+   DI05 - seleção de velocidade
+
+   Nota:
+   Confirmar com o esquema real quais são as entradas dos fins de curso.
+*/
+
+/*--------------- Task2 -------------------*/
+/* Sub-rotina para controlo de velocidade */
+
+
+
+  SSPOSSPEED Velocidade;
+  /*CW - Rotação de Posicionamento Horária*/
+  /*CCW - Rotação de Posicionamento Anti-Horária*/
+
+  Task2()
+
+  {
+   while(1)
+   {
+   if(DI05)
+   {
+       Velocidade.CW = Velocidade.CCW = 1000;     //define a velocidade
+   }
+   else
+   {
+       Velocidade.CW = Velocidade.CCW = 2500;
+   }
+   _SetSys(SS_POSSPEED, Velocidade);
+  }
+}
+
+
+
+/*=============================================
+      Main Function
+===============================================*/
+
+main()
+{
+    _SetTask2(T2_START, Task2);
+
+    while(1)
+    {
+        /*-------------------------------
+              MODO AUTOMÁTICO
+        --------------------------------*/
+        if (DI04)
+        {
+            _AxisStop(AS_ENABLE);                 // destranca o freio
+
+            _GoAbs(GO_WAIT, posicao_minima);      // vai para posição 0
+            _GoAbs(GO_WAIT, posicao_media);       // vai para posição intermédia
+
+            _Wait(5000);                // espera 5 segundos
+
+            _GoAbs(GO_WAIT, posicao_maxima);      // vai para posição máxima
+
+            _Wait(25000);               // espera 25 segundos
+
+            _GoAbs(GO_WAIT, posicao_minima);
+            _AxisStop(AS_RSTOP);                  // bloqueia/paragem controlada
+
+            _Wait(10000);		// espera 10 segundos até começar novo ciclo
+        }
+
+
+        /*-------------------------------
+              MODO MANUAL
+        --------------------------------*/
+
+
+
+        else
+        {
+            if (DI01)
+            {
+                _AxisStop(AS_ENABLE);
+                _GoAbs(GO_WAIT, posicao_minima);
+                _AxisStop(AS_RSTOP);
+            }
+
+            else if (DI02)
+            {
+                _AxisStop(AS_ENABLE);
+                _GoAbs(GO_WAIT, posicao_media);
+                _AxisStop(AS_RSTOP);
+
+            }
+
+            else if (DI03)
+            {
+                _AxisStop(AS_ENABLE);
+                _GoAbs(GO_WAIT, posicao_maxima);
+                _AxisStop(AS_RSTOP);
+            }
+
+            else
+            {
+                /*
+                  Se não existir qualquer chamada durante 25 segundos,
+                  a caixa regressa automaticamente à posição mínima.
+                */
+
+                _Wait(25000);
+
+
+                {
+                    _AxisStop(AS_ENABLE);
+                    _GoAbs(GO_WAIT, posicao_minima);
+                    _AxisStop(AS_RSTOP);
+                }
+            }
+        }
+    }
+} 
